@@ -1,91 +1,57 @@
-import ftplib
-import os
-from datetime import datetime
+import ftplib  # Para conectarse y trabajar con servidores FTP.
+import os  # Para manejar operaciones del sistema operativo.
+from datetime import datetime  # Para trabajar con fechas y horas.
 
-FTP_HOST = "ftp.ed.ac.uk"
-FTP_USER = "anonymous"
-FTP_PASS = ""
-# FTP_HOST = "192.168.1.1"
-# FTP_USER = "admin"
-# FTP_PASS = "586290929699"
+# Configuración del servidor FTP.
+FTP_HOST = "ftp.ed.ac.uk"  # Dirección del servidor FTP.
+FTP_USER = "anonymous"  # Usuario para la conexión (anónimo para servidores públicos).
+FTP_PASS = ""  # Contraseña para el usuario (vacía en este caso).
 
-# algunas funciones de utilidad que vamos a necesitar
+# Función para convertir el tamaño de archivos a un formato legible.
 def get_size_format(n, suffix="B"):
-    # convierte bytes a formato escalado (por ejemplo, KB, MB, etc.)
     for unit in ["", "K", "M", "G", "T", "P"]:
         if n < 1024:
-            return f"{n:.2f}{unit}{suffix}"
+            return f"{n:.2f}{unit}{suffix}"  # Retorna el tamaño en KB, MB, etc.
         n /= 1024
 
-
+# Función para formatear la fecha y hora a un formato legible.
 def get_datetime_format(date_time):
-    # convertir a objeto de fecha y hora
-    date_time = datetime.strptime(date_time, "%Y%m%d%H%M%S")
-    # convertir a una cadena de fecha y hora legible por humanos
-    return date_time.strftime("%Y/%m/%d %H:%M:%S")
+    date_time = datetime.strptime(date_time, "%Y%m%d%H%M%S")  # Convierte la fecha a objeto `datetime`.
+    return date_time.strftime("%Y/%m/%d %H:%M:%S")  # Retorna la fecha formateada.
 
+# Inicializar sesión FTP.
+ftp = ftplib.FTP(FTP_HOST, FTP_USER, FTP_PASS)  # Se conecta al servidor FTP.
+ftp.encoding = "utf-8"  # Establece codificación UTF-8 para manejar nombres correctamente.
+print(ftp.getwelcome())  # Imprime el mensaje de bienvenida del servidor.
 
-# inicializar sesión FTP
-ftp = ftplib.FTP(FTP_HOST, FTP_USER, FTP_PASS)
-# forzar la codificación UTF-8
-ftp.encoding = "utf-8"
-# imprimir el mensaje de bienvenida
-print(ftp.getwelcome())
-# cambie el directorio de trabajo actual a la carpeta 'pub' y la subcarpeta 'maps'
-ftp.cwd("pub/maps")
+# Cambiar al directorio deseado en el servidor.
+ftp.cwd("pub/maps")  # Cambia al directorio "pub/maps".
 
-# LISTA de un directorio
+# Listar el contenido del directorio usando el comando LIST.
 print("*"*50, "LIST", "*"*50)
-ftp.dir()
+ftp.dir()  # Imprime la lista detallada del contenido del directorio.
 
-# Comando NLST
+# Listar nombres de archivos con el comando NLST.
 print("*"*50, "NLST", "*"*50)
 print("{:20} {}".format("File Name", "File Size"))
-for file_name in ftp.nlst():
+for file_name in ftp.nlst():  # Obtiene una lista de archivos en el directorio.
     file_size = "N/A"
     try:
-        ftp.cwd(file_name)
-    except Exception as e:
-        ftp.voidcmd("TYPE I")
-        file_size = get_size_format(ftp.size(file_name))
+        ftp.cwd(file_name)  # Comprueba si es un directorio (intentando entrar en él).
+    except Exception as e:  # Si no es un directorio:
+        ftp.voidcmd("TYPE I")  # Cambia el tipo de transferencia a binario.
+        file_size = get_size_format(ftp.size(file_name))  # Obtiene el tamaño del archivo.
     print(f"{file_name:20} {file_size}")
 
-
+# Utilizar el comando MLSD para obtener información detallada.
 print("*"*50, "MLSD", "*"*50)
-# utilizando el comando MLSD
 print("{:30} {:19} {:6} {:5} {:4} {:4} {:4} {}".format("File Name", "Last Modified", "Size",
                                                     "Perm","Type", "GRP", "MODE", "OWNER"))
-for file_data in ftp.mlsd():
-    # extraer datos devueltos
-    file_name, meta = file_data
-    # es decir, directorio, archivo o enlace, etc.
-    file_type = meta.get("type")
-    if file_type == "file":
-        # si es un archivo, cambie el tipo de transferencia de datos a IMAGEN/binario
-        ftp.voidcmd("TYPE I")
-        # obtener el tamaño del archivo en bytes
-        file_size = ftp.size(file_name)
-        # convertirlo a un formato legible por humanos (es decir, en 'KB', 'MB', etc.)
-        file_size = get_size_format(file_size)
+for file_data in ftp.mlsd():  # Itera sobre la lista detallada.
+    file_name, meta = file_data  # Divide los datos en nombre y metadatos.
+    file_type = meta.get("type")  # Tipo de archivo (archivo, directorio, etc.).
+    if file_type == "file":  # Si es un archivo:
+        ftp.voidcmd("TYPE I")  # Cambia a transferencia binaria.
+        file_size = get_size_format(ftp.size(file_name))  # Obtiene el tamaño del archivo.
     else:
-        # no es un archivo, puede ser un directorio u otros tipos
-        file_size = "N/A"
-    # fecha de la última modificación del archivo
-    last_modified = get_datetime_format(meta.get("modify"))
-    # file permissions
-    permission = meta.get("perm")
-    
-    # obtener la identificación única del archivo
-    unique_id = meta.get("unique")
-    # grupo de usuario
-    unix_group = meta.get("unix.group")
-    # modo archivo, permisos unix
-    unix_mode = meta.get("unix.mode")
-    # Dueño del archivo
-    unix_owner = meta.get("unix.owner")
-    # imprimir todo
-    print(f"{file_name:30} {last_modified:19} {file_size:7} {permission:5} {file_type:4} {unix_group:4} {unix_mode:4} {unix_owner}")
-
-
-# salir y cerrar la conexión
-ftp.quit()
+        file_size = "N/A"  # No aplica tamaño si

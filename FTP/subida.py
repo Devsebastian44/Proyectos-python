@@ -1,20 +1,24 @@
-import ftplib
+import ftplib  # Biblioteca para trabajar con servidores FTP.
 
-# Credenciales del servidor FTP
-FTP_HOST = "ftp.dlptest.com"
-FTP_USER = "dlpuser@dlptest.com"
-FTP_PASS = "SzMf7rTE4pCrf9dV286GuNe4N"
+# Credenciales del servidor FTP.
+FTP_HOST = "ftp.dlptest.com"  # Dirección del servidor FTP.
+FTP_USER = "dlpuser@dlptest.com"  # Usuario del servidor FTP.
+FTP_PASS = "SzMf7rTE4pCrf9dV286GuNe4N"  # Contraseña del usuario.
 
-# conectarse al servidor FTP
-ftp = ftplib.FTP(FTP_HOST, FTP_USER, FTP_PASS)
-# forzar la codificación UTF-8
-ftp.encoding = "utf-8"
-# nombre de archivo local que desea cargar
-filename = "some_file.txt"
+# Conectarse al servidor FTP.
+ftp = ftplib.FTP(FTP_HOST, FTP_USER, FTP_PASS)  # Inicializa la conexión.
+ftp.encoding = "utf-8"  # Configura la codificación para manejar caracteres especiales.
+
+# Nombre del archivo que se desea cargar al servidor.
+filename = "some_file.txt"  # Nombre del archivo local.
+
+# Abrir el archivo local en modo lectura binaria.
 with open(filename, "rb") as file:
-    # use el comando STOR de FTP para cargar el archivo
+    # Cargar el archivo al servidor usando el comando FTP STOR.
     ftp.storbinary(f"STOR {filename}", file)
-# lista de archivos y directorios actuales
+
+# Mostrar el contenido del directorio actual del servidor para verificar la carga.
 ftp.dir()
-# salir y cerrar la conexión
+
+# Cerrar la conexión con el servidor FTP.
 ftp.quit()
